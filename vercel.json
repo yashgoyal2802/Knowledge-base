@@ -4,7 +4,8 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 60,
-      "memory": 1024
+      "memory": 1024,
+      "excludeFiles": "{ingestion/**,frontend/**,.git/**,.github/**,*.md}"
     }
   },
   "rewrites": [
