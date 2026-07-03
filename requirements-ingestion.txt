@@ -1,0 +1,11 @@
+# ============================================================================
+# CyberIntel — Ingestion Pipeline Dependencies
+# ============================================================================
+# These dependencies are ONLY needed by GitHub Actions (ingestion/) and local dev.
+# They are excluded from requirements.txt to keep Vercel serverless bundle under 225 MB.
+# ============================================================================
+
+feedparser>=6.0.0                  # RSS/Atom feed parsing
+beautifulsoup4>=4.12.0             # HTML content extraction
+uvicorn>=0.30.0                      # Local dev server
+python-dotenv>=1.0.0               # Load .env files for local development

@@ -51,7 +51,7 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt -r requirements-ingestion.txt
 
       # ------------------------------------------------------------------
       # Keep-alive: prevent Supabase free-tier auto-pause
