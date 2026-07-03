@@ -62,10 +62,28 @@ CISA_KEV_PRIMARY = CISA_KEV_GITHUB_URL
 # ---------------------------------------------------------------------------
 
 NEWS_FEEDS: dict[str, dict] = {
+    "bleeping_computer": {
+        "url": "https://www.bleepingcomputer.com/feed/",
+        "stream": "news",
+        "full_content": True,
+        "frequency": "daily",
+    },
+    "security_week": {
+        "url": "https://feeds.feedburner.com/securityweek",
+        "stream": "news",
+        "full_content": False,
+        "frequency": "daily",
+    },
     "the_hacker_news": {
         "url": "https://feeds.feedburner.com/TheHackersNews",
         "stream": "news",
         "full_content": True,
+        "frequency": "daily",
+    },
+    "help_net_security": {
+        "url": "https://www.helpnetsecurity.com/feed/",
+        "stream": "news",
+        "full_content": False,
         "frequency": "daily",
     },
     "dark_reading": {
@@ -80,25 +98,29 @@ NEWS_FEEDS: dict[str, dict] = {
         "full_content": True,
         "frequency": "2-4/week",
     },
+    "mandiant_threat_intel": {
+        "url": "https://www.mandiant.com/resources/blog/rss.xml",
+        "stream": "news",
+        "full_content": False,
+        "frequency": "weekly",
+    },
+    "wired_security": {
+        "url": "https://www.wired.com/feed/category/security/latest/rss",
+        "stream": "news",
+        "full_content": False,
+        "frequency": "daily",
+    },
     "infosecurity_magazine": {
         "url": "https://www.infosecurity-magazine.com/rss/news/",
         "stream": "news",
         "full_content": False,
         "frequency": "daily",
-        "note": "No official RSS confirmed — may need fallback HTML scraping",
     },
     "cso_online": {
         "url": "https://www.csoonline.com/feed/",
         "stream": "news",
         "full_content": False,
         "frequency": "daily",
-    },
-    "sc_media": {
-        "url": "https://www.scworld.com/feed",
-        "stream": "news",
-        "full_content": False,
-        "frequency": "daily",
-        "note": "No official RSS confirmed — may need fallback HTML scraping",
     },
     "cyberscoop": {
         "url": "https://cyberscoop.com/feed/",
@@ -111,7 +133,6 @@ NEWS_FEEDS: dict[str, dict] = {
         "stream": "news",
         "full_content": False,
         "frequency": "daily",
-        "note": "Feed can be unreliable — implement retry with fallback",
     },
     "tldr_sec": {
         "url": "https://rss.beehiiv.com/feeds/xgT92yW05G.xml",
@@ -201,8 +222,8 @@ RETRY_BACKOFF_FACTOR: float = 2.0
 # ---------------------------------------------------------------------------
 
 # Max articles to process per source per ingestion run.
-# With 12 sources × 25 = 300 max articles → well within 1,500 RPD.
-MAX_ARTICLES_PER_SOURCE: int = 25
+# With 17 sources × 15 = 255 max news/research items → well within 1,500 RPD limit.
+MAX_ARTICLES_PER_SOURCE: int = 15
 
-# Max CVEs to process per ingestion run (NVD can return thousands).
-MAX_CVES_PER_RUN: int = 200
+# Max CVEs to process per ingestion run (reduced to prioritize news & research).
+MAX_CVES_PER_RUN: int = 50

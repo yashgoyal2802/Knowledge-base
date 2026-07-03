@@ -11,7 +11,7 @@ export default function Dashboard({ articles, vulns, stats, onNavigate }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
       {/* Hero Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(255, 107, 0, 0.15) 0%, rgba(18, 20, 24, 0.8) 100%)',
+        background: 'linear-gradient(135deg, var(--primary-glow) 0%, var(--bg-surface) 100%)',
         border: '1px solid var(--border-hover)',
         borderRadius: 'var(--radius-lg)',
         padding: '2rem 2.5rem',

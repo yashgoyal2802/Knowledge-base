@@ -36,7 +36,10 @@ export default function InfiniteTimeline({ activeTab, setActiveTab }) {
       if (!res.ok) throw new Error('API fetch failed');
       const data = await res.json();
 
-      const newItems = data.items || [];
+      let newItems = data.items || [];
+      if (!append && newItems.length === 0) {
+        newItems = generateDemoData(activeTab, pageNum);
+      }
       if (append) {
         setItems(prev => [...prev, ...newItems]);
       } else {
@@ -270,52 +273,88 @@ export default function InfiniteTimeline({ activeTab, setActiveTab }) {
 // Helper: Generate realistic demo data for immediate UI preview
 function generateDemoData(tab, pageNum) {
   if (tab === 'articles') {
-    return [
+    const base = [
       {
         id: `demo-art-${pageNum}-1`,
-        title: "Critical Zero-Day Exploited in Ivanti Connect Secure VPN Gateways",
-        url: "https://thehackernews.com",
-        source: "the_hacker_news",
+        title: "Google Mandiant Unveils 'AI Cyber Defense Agent' for Real-Time SOC Automated Remediation",
+        url: "https://cloud.google.com/blog/topics/threat-intelligence",
+        source: "mandiant_threat_intel",
         stream: "news",
-        author: "Ravie Lakshmanan",
+        author: "Kevin Mandia",
         published_at: new Date(Date.now() - 3600000 * pageNum).toISOString(),
-        tags: ["Zero-Day", "Ivanti", "VPN", "RCE", "CISA"],
+        tags: ["AI Security", "SOC Automation", "Mandiant", "Threat Defense", "Gemini 2.0"],
         enriched: true,
         summary_bullets: [
-          "Attackers are actively chaining authentication bypass (CVE-2024-21887) and command injection vulnerabilities to compromise Ivanti VPN appliances.",
-          "Over 1,700 instances worldwide have been confirmed compromised with custom web shells and memory-only droppers.",
-          "CISA has issued an emergency directive ordering federal civilian executive branch agencies to disconnect affected instances immediately."
+          "Mandiant researchers demonstrate a new multi-agent cybersecurity framework capable of triaging SOC alerts with 99.4% accuracy.",
+          "The system leverages Gemini 2.0 Flash reasoning to correlate cross-cloud IAM telemetry, firewall logs, and endpoint memory dumps in real time.",
+          "Early enterprise deployments report a 85% reduction in Mean Time To Remediate (MTTR) for ransomware pre-cursor activity."
         ],
-        business_angle: "VPN gateways sit at the perimeter network edge. Compromise allows complete internal network pivoting without valid user credentials. Prioritize emergency patching or offline isolation.",
-        interview_nugget: "When perimeter VPNs are compromised via memory-only web shells, traditional file-integrity monitoring fails; forensic responders must dump volatile RAM before rebooting."
+        business_angle: "Automating Tier-1 and Tier-2 SOC triage alleviates severe cybersecurity talent shortages while responding to machine-speed attacks before data exfiltration occurs.",
+        interview_nugget: "Modern SOC automation requires moving beyond static SOAR playbooks to agentic workflows that dynamically formulate hypotheses and verify containment."
       },
       {
         id: `demo-art-${pageNum}-2`,
-        title: "DeepSeek-R1 AI Architecture Analyzed for Novel Automated Exploit Generation",
+        title: "NIST Releases Post-Quantum Cryptography Implementation Guidance for Enterprise Infrastructure",
+        url: "https://www.bleepingcomputer.com",
+        source: "bleeping_computer",
+        stream: "news",
+        author: "Lawrence Abrams",
+        published_at: new Date(Date.now() - 7200000 * pageNum).toISOString(),
+        tags: ["Post-Quantum", "Cryptography", "NIST", "FIPS 203", "ML-KEM"],
+        enriched: true,
+        summary_bullets: [
+          "NIST has officially mandated migration timelines for FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), and FIPS 205 (SLH-DSA) quantum-resistant standards.",
+          "The directive warns against 'Store Now, Decrypt Later' (SNDL) espionage tactics currently targeting financial, healthcare, and defense communications.",
+          "Organizations are instructed to conduct cryptographic asset inventories and transition TLS handshakes to hybrid Kyber algorithms by Q4 2026."
+        ],
+        business_angle: "Quantum computing threats are an immediate risk to long-life sensitive data. Cryptographic agility must be budgeted into all upcoming infrastructure refreshes.",
+        interview_nugget: "Hybrid cryptographic protocols—combining standard ECDH with lattice-based ML-KEM—provide defense-in-depth during the multi-year quantum transition."
+      },
+      {
+        id: `demo-art-${pageNum}-3`,
+        title: "DeepSeek-R1 AI Architecture Analyzed for Novel Automated Exploit Generation & Defensive Patching",
         url: "https://darkreading.com",
         source: "darkreading",
         stream: "research",
         author: "Kelly Jackson Higgins",
-        published_at: new Date(Date.now() - 7200000 * pageNum).toISOString(),
-        tags: ["LLM", "DeepSeek", "Vulnerability Research", "Automated Exploitation"],
+        published_at: new Date(Date.now() - 10800000 * pageNum).toISOString(),
+        tags: ["LLM", "DeepSeek", "Vulnerability Research", "Automated Exploitation", "AI Defense"],
         enriched: true,
         summary_bullets: [
           "Security researchers demonstrate that open-weight reasoning models like DeepSeek-R1 can autonomously discover complex race conditions in Linux kernel drivers.",
           "The model achieved a 42% success rate in generating working proof-of-concept exploits when fed raw decompiled binaries.",
-          "Defensive teams are adapting the same models to automate root-cause analysis and generate verified patches prior to deployment."
+          "Defensive teams are adapting the same reasoning traces to automate root-cause analysis and generate verified patches prior to deployment."
         ],
         business_angle: "AI reasoning models are drastically compressing the timeline between vulnerability disclosure and automated exploitation from weeks to hours.",
         interview_nugget: "The asymmetry of AI in cybersecurity: offensive AI only needs to find one flaw in a complex state machine, whereas defensive AI must formally prove memory safety across all paths."
       },
       {
-        id: `demo-art-${pageNum}-3`,
-        title: "LockBit Ransomware Affiliate Toolkit Leaked Following Law Enforcement Disruptions",
+        id: `demo-art-${pageNum}-4`,
+        title: "Zero-Trust Identity Architecture Stops Massive OAuth Application Phishing Campaign",
+        url: "https://www.wired.com",
+        source: "wired_security",
+        stream: "news",
+        author: "Andy Greenberg",
+        published_at: new Date(Date.now() - 14400000 * pageNum).toISOString(),
+        tags: ["Zero-Trust", "OAuth", "Identity Security", "Phishing Resistant MFA", "Cloud"],
+        enriched: true,
+        summary_bullets: [
+          "A global campaign targeting Fortune 500 cloud tenants attempted to bypass legacy MFA via illicit OAuth application consent grants.",
+          "Organizations enforcing FIDO2/WebAuthn hardware tokens and continuous identity posture evaluation successfully thwarted all compromise attempts.",
+          "Threat actors are increasingly shifting away from credential stuffing toward token hijacking and session cookie exfiltration."
+        ],
+        business_angle: "Traditional passwords and SMS/app-based OTPs are obsolete against modern adversary-in-the-middle (AiTM) phishing kits. Phishing-resistant FIDO2 MFA is essential.",
+        interview_nugget: "Identity is the primary security perimeter in cloud architectures; monitoring OAuth token scopes and conditional access policies stops lateral movement."
+      },
+      {
+        id: `demo-art-${pageNum}-5`,
+        title: "Operation Cronos: LockBit Ransomware Affiliate Toolkit Leaked Following Law Enforcement Takedown",
         url: "https://krebsonsecurity.com",
         source: "krebs_on_security",
         stream: "news",
         author: "Brian Krebs",
-        published_at: new Date(Date.now() - 14400000 * pageNum).toISOString(),
-        tags: ["Ransomware", "LockBit", "Operation Cronos", "Threat Intel"],
+        published_at: new Date(Date.now() - 21600000 * pageNum).toISOString(),
+        tags: ["Ransomware", "LockBit", "Operation Cronos", "Threat Intel", "BYOVD"],
         enriched: true,
         summary_bullets: [
           "An updated version of the LockBit 3.0 builder and affiliate negotiation scripts has surfaced on cybercrime forums following Operation Cronos.",
@@ -326,6 +365,7 @@ function generateDemoData(tab, pageNum) {
         interview_nugget: "BYOVD attacks demonstrate why kernel-level driver blocklists must be continuously updated; signing certificates of vulnerable legitimate drivers must be revoked at the OS level."
       }
     ];
+    return base;
   } else {
     return [
       {

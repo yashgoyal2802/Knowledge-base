@@ -61,7 +61,7 @@ export default function Layout({
         <div className="sidebar-footer">
           <div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: 'bold', marginBottom: '0.4rem' }}>
-              COLOR PALETTE
+              APPEARANCE
             </div>
             <ThemeToggle theme={theme} setTheme={setTheme} />
           </div>
