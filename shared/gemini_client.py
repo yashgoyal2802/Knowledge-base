@@ -1,32 +1,37 @@
 """
-Gemini API wrapper with built-in rate limiting.
+Gemini API REST client with built-in rate limiting.
 
-Wraps the google-generativeai SDK and enforces free-tier limits:
+Uses standard HTTP requests via httpx instead of heavy SDKs (grpcio/protobuf)
+to ensure the Vercel serverless function bundle stays under ~95 MB (well below
+Vercel's 225 MB Lambda limit).
+
+Enforces free-tier limits:
   - 15 requests per minute  (RPM)
   - 1,500 requests per day  (RPD)
-  - 1,000,000 tokens per minute (TPM) — not enforced here (hard to predict)
 
 Provides:
-  - generate_text()          — full response (for enrichment)
+  - generate_text()          — full response
   - generate_text_stream()   — async generator (for RAG SSE)
   - generate_embedding()     — single text → 768-dim vector
+  - generate_query_embedding() — retrieval query vector
   - generate_embeddings_batch() — batch embeddings with rate limiting
 """
 
 import asyncio
+import json
+import logging
 import os
 import time
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
 
-import google.generativeai as genai
+import httpx
 
+logger = logging.getLogger("shared.gemini_client")
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
-# TODO: Set your Gemini API key in the environment.
-#       Get one free at https://aistudio.google.com/apikey
 GEMINI_API_KEY: str = os.getenv(
     "GEMINI_API_KEY",
     "your-gemini-api-key-here",  # TODO: replace with your real API key
@@ -36,8 +41,7 @@ GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
 EMBEDDING_DIMENSIONS: int = 768
 
-# Initialize the SDK
-genai.configure(api_key=GEMINI_API_KEY)
+BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 
 
 # ---------------------------------------------------------------------------
@@ -47,11 +51,6 @@ genai.configure(api_key=GEMINI_API_KEY)
 class RateLimiter:
     """
     Token-bucket rate limiter for Gemini's free tier.
-
-    - Tracks a sliding 60-second window for RPM enforcement.
-    - Tracks a rolling 24-hour counter for RPD enforcement.
-    - Blocks (async sleep) when the minute bucket is full.
-    - Raises RuntimeError when the daily cap is hit.
     """
 
     def __init__(self, rpm: int = 15, rpd: int = 1500):
@@ -91,7 +90,6 @@ class RateLimiter:
         self._day_count += 1
 
 
-# Module-level singleton
 _rate_limiter = RateLimiter()
 
 
@@ -101,86 +99,103 @@ _rate_limiter = RateLimiter()
 
 async def generate_text(
     prompt: str,
-    system_instruction: str | None = None,
+    system_instruction: Optional[str] = None,
 ) -> str:
     """
-    Generate a full text response (blocking until complete).
-
-    Use for enrichment tasks where you need the entire response at once.
+    Generate a full text response (blocking until complete) via REST API.
     """
     await _rate_limiter.acquire()
 
-    model = genai.GenerativeModel(
-        GEMINI_MODEL,
-        system_instruction=system_instruction,
-    )
-    response = model.generate_content(prompt)
-    return response.text
+    url = f"{BASE_URL}/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    payload: dict[str, Any] = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+    if system_instruction:
+        payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(url, json=payload, timeout=30.0)
+        resp.raise_for_status()
+        data = resp.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return ""
+        parts = candidates[0].get("content", {}).get("parts", [])
+        return parts[0].get("text", "") if parts else ""
 
 
 async def generate_text_stream(
     prompt: str,
-    system_instruction: str | None = None,
+    system_instruction: Optional[str] = None,
 ) -> AsyncGenerator[str, None]:
     """
-    Stream text generation — yields chunks as they arrive.
-
-    Use for the RAG chat endpoint (SSE streaming to the frontend).
+    Stream text generation — yields chunks as Server-Sent Events arrive.
     """
     await _rate_limiter.acquire()
 
-    model = genai.GenerativeModel(
-        GEMINI_MODEL,
-        system_instruction=system_instruction,
-    )
-    response = model.generate_content(prompt, stream=True)
+    url = f"{BASE_URL}/models/{GEMINI_MODEL}:streamGenerateContent?alt=sse&key={GEMINI_API_KEY}"
+    payload: dict[str, Any] = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+    if system_instruction:
+        payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
-    for chunk in response:
-        if chunk.text:
-            yield chunk.text
+    async with httpx.AsyncClient() as client:
+        async with client.stream("POST", url, json=payload, timeout=60.0) as resp:
+            resp.raise_for_status()
+            async for line in resp.aiter_lines():
+                if line.startswith("data: "):
+                    data_str = line[6:].strip()
+                    if not data_str or data_str == "[DONE]":
+                        continue
+                    try:
+                        chunk = json.loads(data_str)
+                        candidates = chunk.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            if parts and "text" in parts[0]:
+                                yield parts[0]["text"]
+                    except Exception:
+                        pass
 
 
 # ---------------------------------------------------------------------------
 # Embeddings
 # ---------------------------------------------------------------------------
 
-async def generate_embedding(text: str) -> list[float]:
-    """Generate a single vector embedding (768 dimensions)."""
+async def _embed_content(text: str, task_type: Optional[str] = None) -> list[float]:
     await _rate_limiter.acquire()
 
-    result = genai.embed_content(
-        model=EMBEDDING_MODEL,
-        content=text,
-        task_type="retrieval_document",
-        output_dimensionality=EMBEDDING_DIMENSIONS,
-    )
-    return result["embedding"]
+    model_name = EMBEDDING_MODEL if EMBEDDING_MODEL.startswith("models/") else f"models/{EMBEDDING_MODEL}"
+    url = f"{BASE_URL}/{model_name}:embedContent?key={GEMINI_API_KEY}"
+    
+    payload: dict[str, Any] = {
+        "model": model_name,
+        "content": {"parts": [{"text": text}]},
+        "outputDimensionality": EMBEDDING_DIMENSIONS,
+    }
+    if task_type:
+        payload["taskType"] = task_type
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(url, json=payload, timeout=30.0)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("embedding", {}).get("values", [])
+
+
+async def generate_embedding(text: str) -> list[float]:
+    """Generate a single vector embedding (768 dimensions)."""
+    return await _embed_content(text, task_type="RETRIEVAL_DOCUMENT")
 
 
 async def generate_query_embedding(text: str) -> list[float]:
-    """
-    Generate an embedding optimized for search queries.
-
-    Uses task_type="retrieval_query" which produces embeddings
-    better suited for matching against document embeddings.
-    """
-    await _rate_limiter.acquire()
-
-    result = genai.embed_content(
-        model=EMBEDDING_MODEL,
-        content=text,
-        task_type="retrieval_query",
-        output_dimensionality=EMBEDDING_DIMENSIONS,
-    )
-    return result["embedding"]
+    """Generate an embedding optimized for search queries."""
+    return await _embed_content(text, task_type="RETRIEVAL_QUERY")
 
 
 async def generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    """
-    Generate embeddings for a batch of texts.
-
-    Processes sequentially with rate limiting between each call.
-    """
+    """Generate embeddings for a batch of texts sequentially."""
     embeddings = []
     for text in texts:
         emb = await generate_embedding(text)

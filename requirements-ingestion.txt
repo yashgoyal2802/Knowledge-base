@@ -5,7 +5,8 @@
 # They are excluded from requirements.txt to keep Vercel serverless bundle under 225 MB.
 # ============================================================================
 
+google-generativeai>=0.8.0         # Gemini SDK for ingestion enrichment & embeddings
 feedparser>=6.0.0                  # RSS/Atom feed parsing
 beautifulsoup4>=4.12.0             # HTML content extraction
-uvicorn>=0.30.0                      # Local dev server
+uvicorn>=0.30.0                    # Local dev server
 python-dotenv>=1.0.0               # Load .env files for local development

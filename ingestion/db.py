@@ -276,9 +276,9 @@ def create_ingestion_log(
 
 def complete_ingestion_log(
     log_id: str,
-    items_fetched: int,
-    items_enriched: int,
-    items_embedded: int,
+    items_fetched: int = 0,
+    items_enriched: int = 0,
+    items_embedded: int = 0,
     status: str = "completed",
     errors: Optional[list] = None,
 ) -> None:

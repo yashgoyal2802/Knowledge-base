@@ -2,8 +2,8 @@
 # CyberIntel — Production Serverless Dependencies (Vercel)
 # ============================================================================
 # Lightweight dependencies for Vercel Python serverless functions (api/).
-# Heavy ingestion dependencies (feedparser, bs4, etc.) are in requirements-ingestion.txt
-# to ensure the bundle stays well below Vercel's 225 MB Lambda limit.
+# Heavy SDKs (google-generativeai/grpc, feedparser, bs4) are in requirements-ingestion.txt
+# to ensure the Vercel Lambda bundle stays under ~95 MB (well below the 225 MB limit).
 # ============================================================================
 
 # --- Web Framework ---
@@ -16,12 +16,9 @@ pydantic>=2.0
 supabase>=2.0.0                    # PostgREST client
 asyncpg>=0.29.0                    # Direct SQL / pgvector queries
 
-# --- AI / Gemini ---
-google-generativeai>=0.8.0         # Gemini 2.0 Flash + embeddings
-
 # --- Authentication ---
 python-jose>=3.3.0                 # JWT encoding/decoding (HS256)
 passlib[bcrypt]>=1.7.4             # Password hashing
 
-# --- HTTP Client ---
+# --- HTTP Client (used for Supabase & direct Gemini REST calls) ---
 httpx>=0.27.0                      # Async HTTP client
