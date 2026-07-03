@@ -1,27 +1,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
 
 :root, [data-theme="dark"] {
-  /* Clean Premium Theme: Neon Cyan / Dark Mode */
-  --bg-main: #07090e;
-  --bg-surface: rgba(15, 20, 28, 0.85);
-  --bg-card: rgba(20, 27, 38, 0.65);
-  --bg-card-hover: rgba(28, 38, 54, 0.85);
-  --bg-elevated: #151e2b;
+  /* Ultra-Modern Minimalist SaaS Theme: Obsidian & Electric Cyan */
+  --bg-main: #080a0f;
+  --bg-surface: #0f1219;
+  --bg-sidebar: rgba(13, 16, 23, 0.88);
+  --bg-header: rgba(11, 14, 20, 0.88);
+  --bg-card: #131722;
+  --bg-card-hover: #181d2b;
+  --bg-ai-box: rgba(22, 27, 39, 0.65);
+  --bg-search: rgba(255, 255, 255, 0.04);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-badge-stream: rgba(255, 255, 255, 0.06);
+  --bg-chat-bubble-ai: rgba(22, 27, 39, 0.8);
   
-  --border-color: rgba(0, 240, 255, 0.12);
-  --border-hover: rgba(0, 240, 255, 0.45);
-  --border-active: #00f0ff;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(0, 229, 255, 0.4);
+  --border-active: #00e5ff;
 
-  --primary: #00f0ff;
-  --primary-light: #5ce1e6;
-  --primary-glow: rgba(0, 240, 255, 0.2);
-  --primary-glow-strong: rgba(0, 240, 255, 0.45);
+  --primary: #00e5ff;
+  --primary-light: #38bdf8;
+  --primary-glow: rgba(0, 229, 255, 0.15);
+  --primary-glow-strong: rgba(0, 229, 255, 0.35);
   --accent: #38bdf8;
 
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
   --text-on-primary: #000000;
+
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 12px 30px -4px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 229, 255, 0.15);
+  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 30px rgba(0, 229, 255, 0.15);
 
   --severity-critical: #ef4444;
   --severity-critical-bg: rgba(239, 68, 68, 0.15);
@@ -48,27 +58,46 @@
 }
 
 [data-theme="light"] {
-  /* Clean Premium Theme: Cyan / Light Mode */
-  --bg-main: #f8fafc;
-  --bg-surface: rgba(255, 255, 255, 0.9);
-  --bg-card: rgba(255, 255, 255, 0.85);
+  /* Ultra-Modern Minimalist SaaS Theme: Clean Cloud & Sapphire Blue */
+  --bg-main: #f3f5f9;
+  --bg-surface: #ffffff;
+  --bg-sidebar: rgba(255, 255, 255, 0.92);
+  --bg-header: rgba(255, 255, 255, 0.92);
+  --bg-card: #ffffff;
   --bg-card-hover: #ffffff;
-  --bg-elevated: #ffffff;
+  --bg-ai-box: #f8fafc;
+  --bg-search: #f1f5f9;
+  --bg-hover: #f1f5f9;
+  --bg-badge-stream: #f1f5f9;
+  --bg-chat-bubble-ai: #f8fafc;
   
-  --border-color: rgba(2, 132, 199, 0.18);
-  --border-hover: rgba(2, 132, 199, 0.5);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-hover: #0284c7;
   --border-active: #0284c7;
 
   --primary: #0284c7;
   --primary-light: #0369a1;
-  --primary-glow: rgba(2, 132, 199, 0.15);
-  --primary-glow-strong: rgba(2, 132, 199, 0.35);
+  --primary-glow: rgba(2, 132, 199, 0.1);
+  --primary-glow-strong: rgba(2, 132, 199, 0.25);
   --accent: #0ea5e9;
 
   --text-main: #0f172a;
   --text-muted: #475569;
   --text-dim: #64748b;
   --text-on-primary: #ffffff;
+
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  --severity-critical: #dc2626;
+  --severity-critical-bg: #fee2e2;
+  --severity-high: #ea580c;
+  --severity-high-bg: #ffedd5;
+  --severity-medium: #ca8a04;
+  --severity-medium-bg: #fef9c3;
+  --severity-low: #2563eb;
+  --severity-low-bg: #dbeafe;
 }
 
 * {
@@ -117,7 +146,7 @@ button {
   background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(150, 150, 150, 0.25);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -132,7 +161,7 @@ button {
   display: flex;
   min-height: 100vh;
   background: radial-gradient(circle at 15% 10%, var(--primary-glow) 0%, transparent 40%),
-              radial-gradient(circle at 85% 90%, rgba(255, 255, 255, 0.03) 0%, transparent 40%),
+              radial-gradient(circle at 85% 90%, rgba(255, 255, 255, 0.02) 0%, transparent 40%),
               var(--bg-main);
 }
 
@@ -142,8 +171,9 @@ button {
   position: fixed;
   top: 0;
   left: 0;
-  background: rgba(12, 14, 18, 0.85);
+  background: var(--bg-sidebar);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -177,9 +207,7 @@ button {
   font-family: var(--font-heading);
   font-size: 1.25rem;
   font-weight: 800;
-  background: linear-gradient(90deg, #fff, var(--text-muted));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-main);
 }
 
 .nav-menu {
@@ -203,15 +231,14 @@ button {
 
 .nav-item:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-hover);
 }
 
 .nav-item.active {
   color: var(--primary);
   background: var(--primary-glow);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-color);
   font-weight: 600;
-  box-shadow: inset 0 0 12px var(--primary-glow);
 }
 
 .sidebar-footer {
@@ -229,7 +256,7 @@ button {
   gap: 0.6rem;
   width: 100%;
   padding: 0.65rem 1rem;
-  background: var(--bg-card);
+  background: var(--bg-search);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-main);
@@ -237,7 +264,6 @@ button {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-normal);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .theme-toggle-btn:hover {
@@ -245,7 +271,6 @@ button {
   border-color: var(--primary);
   color: var(--primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 .theme-icon.sun {
@@ -269,8 +294,9 @@ button {
   height: var(--header-height);
   position: sticky;
   top: 0;
-  background: rgba(8, 9, 10, 0.8);
+  background: var(--bg-header);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -283,7 +309,7 @@ button {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-search);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-full);
   padding: 0.5rem 1.25rem;
@@ -294,7 +320,7 @@ button {
 .search-bar:focus-within {
   border-color: var(--primary);
   box-shadow: 0 0 15px var(--primary-glow);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--bg-surface);
 }
 
 .search-input {
@@ -335,7 +361,7 @@ button {
 }
 
 .btn-outline {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-search);
   color: var(--text-main);
   border: 1px solid var(--border-color);
   font-weight: 500;
@@ -369,12 +395,14 @@ button {
 .card {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-card);
 }
 
 .card::before {
@@ -393,7 +421,7 @@ button {
   background: var(--bg-card-hover);
   border-color: var(--border-hover);
   transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-glow);
+  box-shadow: var(--shadow-hover);
 }
 
 .card:hover::before {
@@ -414,7 +442,7 @@ button {
 }
 
 .badge-stream {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--bg-badge-stream);
   color: var(--text-main);
   border: 1px solid var(--border-color);
 }
@@ -422,21 +450,20 @@ button {
 .badge-source {
   background: var(--primary-glow);
   color: var(--primary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .badge-ai {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
-  color: #e879f9;
-  border: 1px solid rgba(232, 121, 249, 0.3);
-  box-shadow: 0 0 10px rgba(232, 121, 249, 0.15);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.15));
+  color: #d946ef;
+  border: 1px solid rgba(217, 70, 239, 0.3);
 }
 
 .badge-cve {
   font-family: var(--font-mono);
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bg-search);
   color: var(--primary);
-  border: 1px solid var(--primary);
+  border: 1px solid var(--border-color);
   font-size: 0.8rem;
 }
 
@@ -466,11 +493,11 @@ button {
 
 /* AI Enrichment Box */
 .ai-box {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-ai-box);
+  border: 1px solid var(--border-color);
   border-left: 3px solid var(--primary);
   border-radius: var(--radius-md);
-  padding: 1rem;
+  padding: 1.25rem;
   margin-top: 1rem;
 }
 
@@ -490,7 +517,7 @@ button {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .ai-bullets li {
@@ -511,9 +538,9 @@ button {
 .ai-nugget {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  border-top: 1px dashed var(--border-color);
   font-size: 0.85rem;
-  color: #fce7f3;
+  color: var(--text-main);
   font-style: italic;
   display: flex;
   gap: 0.5rem;
@@ -540,6 +567,7 @@ button {
   gap: 1.25rem;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-card);
 }
 
 .stat-icon {
@@ -597,11 +625,12 @@ button {
   border-radius: var(--radius-lg);
   overflow: hidden;
   position: relative;
+  box-shadow: var(--shadow-card);
 }
 
 .chat-header {
   padding: 1rem 1.5rem;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--bg-search);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -636,7 +665,7 @@ button {
 
 .chat-bubble.ai {
   align-self: flex-start;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--bg-chat-bubble-ai);
   border: 1px solid var(--border-color);
   color: var(--text-main);
   border-bottom-left-radius: 4px;
@@ -657,10 +686,10 @@ button {
   gap: 0.5rem;
   font-size: 0.8rem;
   color: var(--primary);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-search);
   padding: 0.4rem 0.75rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
 }
 
 .source-item:hover {
@@ -670,7 +699,7 @@ button {
 
 .chat-input-area {
   padding: 1rem 1.5rem;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bg-search);
   border-top: 1px solid var(--border-color);
   display: flex;
   gap: 0.75rem;
@@ -678,7 +707,7 @@ button {
 
 .chat-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-full);
   padding: 0.75rem 1.5rem;

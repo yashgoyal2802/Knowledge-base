@@ -125,7 +125,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
         )}
 
         {success && (
-          <div style={{ background: 'rgba(0, 255, 102, 0.15)', color: '#00ff66', border: '1px solid #00ff66', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ background: 'var(--severity-low-bg)', color: 'var(--severity-low)', border: '1px solid var(--severity-low)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <CheckCircle size={16} />
             <span>{success}</span>
           </div>

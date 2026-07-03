@@ -99,7 +99,7 @@ export default function Dashboard({ articles, vulns, stats, onNavigate }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(249, 115, 22, 0.15)', color: 'var(--severity-high)' }}>
+          <div className="stat-icon" style={{ background: 'var(--severity-high-bg)', color: 'var(--severity-high)' }}>
             <AlertTriangle size={26} />
           </div>
           <div className="stat-info">
@@ -111,12 +111,12 @@ export default function Dashboard({ articles, vulns, stats, onNavigate }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#e879f9' }}>
+          <div className="stat-icon" style={{ background: 'rgba(217, 70, 239, 0.15)', color: '#d946ef' }}>
             <Cpu size={26} />
           </div>
           <div className="stat-info">
             <h4>AI Enriched Rate</h4>
-            <div className="stat-value" style={{ color: '#e879f9' }}>
+            <div className="stat-value" style={{ color: '#d946ef' }}>
               {stats.enrichedPercentage || '100%'}
             </div>
           </div>

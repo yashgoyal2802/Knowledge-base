@@ -67,7 +67,7 @@ export default function Layout({
           </div>
 
           <div style={{
-            background: 'rgba(0, 0, 0, 0.4)',
+            background: 'var(--bg-search)',
             padding: '0.75rem',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--border-color)',

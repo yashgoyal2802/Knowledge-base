@@ -18,11 +18,18 @@ export default function VulnCard({ vuln }) {
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return 'Recently';
-    return new Date(dateStr).toLocaleDateString(undefined, {
+    if (!dateStr) return 'Unknown pub date';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'UTC',
+      timeZoneName: 'short',
     });
   };
 
@@ -131,7 +138,7 @@ export default function VulnCard({ vuln }) {
               )}
 
               {vuln.business_angle && (
-                <div style={{ background: 'rgba(255, 107, 0, 0.08)', padding: '0.65rem 0.85rem', borderRadius: '6px', borderLeft: '2px solid var(--primary)' }}>
+                <div style={{ background: 'var(--primary-glow)', padding: '0.65rem 0.85rem', borderRadius: '6px', borderLeft: '2px solid var(--primary)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '0.25rem' }}>
                     <Briefcase size={14} /> CISO RISK ASSESSMENT & REMEDIATION
                   </div>

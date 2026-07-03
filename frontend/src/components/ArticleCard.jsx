@@ -5,13 +5,18 @@ export default function ArticleCard({ article }) {
   const [showEnrichment, setShowEnrichment] = useState(true);
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return 'Recently';
+    if (!dateStr) return 'Unknown pub date';
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'UTC',
+      timeZoneName: 'short',
     });
   };
 
@@ -62,7 +67,7 @@ export default function ArticleCard({ article }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
             <Tag size={13} />
             {article.tags.slice(0, 4).map((tag, idx) => (
-              <span key={idx} style={{ background: 'rgba(255,255,255,0.05)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+              <span key={idx} style={{ background: 'var(--bg-search)', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
                 {tag}
               </span>
             ))}
@@ -97,7 +102,7 @@ export default function ArticleCard({ article }) {
               )}
 
               {article.business_angle && (
-                <div style={{ background: 'rgba(255, 107, 0, 0.08)', padding: '0.65rem 0.85rem', borderRadius: '6px', borderLeft: '2px solid var(--primary)' }}>
+                <div style={{ background: 'var(--primary-glow)', padding: '0.65rem 0.85rem', borderRadius: '6px', borderLeft: '2px solid var(--primary)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '0.25rem' }}>
                     <Briefcase size={14} /> CISO / BUSINESS IMPACT
                   </div>

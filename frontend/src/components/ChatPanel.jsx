@@ -286,7 +286,7 @@ export default function ChatPanel() {
 
         {/* Suggested Prompt Chips */}
         {messages.length <= 2 && !isStreaming && (
-          <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', overflowX: 'auto' }}>
+          <div style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-search)', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem', overflowX: 'auto' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 'bold', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
               <HelpCircle size={13} /> Suggested:
             </span>
@@ -296,7 +296,7 @@ export default function ChatPanel() {
                 type="button"
                 onClick={() => handleSend(q)}
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
+                  background: 'var(--bg-card)',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-full)',
                   padding: '0.35rem 0.85rem',

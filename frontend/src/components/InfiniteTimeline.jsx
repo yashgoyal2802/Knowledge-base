@@ -90,7 +90,7 @@ export default function InfiniteTimeline({ activeTab, setActiveTab }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Top Controls & Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', background: 'var(--bg-card)', padding: '1rem 1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.4)', padding: '0.3rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-search)', padding: '0.3rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
           <button
             type="button"
             className={`btn-outline ${activeTab === 'articles' ? 'active-tab' : ''}`}
@@ -160,7 +160,7 @@ export default function InfiniteTimeline({ activeTab, setActiveTab }) {
               onClick={() => setStreamFilter(streamFilter === '' ? 'news' : streamFilter === 'news' ? 'research' : '')}
               className="badge"
               style={{
-                background: streamFilter ? 'var(--primary-glow)' : 'rgba(255,255,255,0.05)',
+                background: streamFilter ? 'var(--primary-glow)' : 'var(--bg-search)',
                 color: streamFilter ? 'var(--primary)' : 'var(--text-muted)',
                 border: `1px solid ${streamFilter ? 'var(--primary)' : 'var(--border-color)'}`,
                 cursor: 'pointer',
@@ -181,7 +181,7 @@ export default function InfiniteTimeline({ activeTab, setActiveTab }) {
               }}
               className="badge"
               style={{
-                background: severityFilter ? `var(--severity-${severityFilter.toLowerCase()}-bg)` : 'rgba(255,255,255,0.05)',
+                background: severityFilter ? `var(--severity-${severityFilter.toLowerCase()}-bg)` : 'var(--bg-search)',
                 color: severityFilter ? `var(--severity-${severityFilter.toLowerCase()})` : 'var(--text-muted)',
                 border: `1px solid ${severityFilter ? `var(--severity-${severityFilter.toLowerCase()})` : 'var(--border-color)'}`,
                 cursor: 'pointer',
@@ -196,7 +196,7 @@ export default function InfiniteTimeline({ activeTab, setActiveTab }) {
               onClick={() => setKevOnly(!kevOnly)}
               className="badge"
               style={{
-                background: kevOnly ? 'var(--severity-critical-bg)' : 'rgba(255,255,255,0.05)',
+                background: kevOnly ? 'var(--severity-critical-bg)' : 'var(--bg-search)',
                 color: kevOnly ? 'var(--severity-critical)' : 'var(--text-muted)',
                 border: `1px solid ${kevOnly ? 'var(--severity-critical)' : 'var(--border-color)'}`,
                 cursor: 'pointer',

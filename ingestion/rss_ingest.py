@@ -14,6 +14,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import email.utils
 import logging
 import time
 from calendar import timegm
@@ -69,28 +70,39 @@ def clean_html(html: str | None) -> str:
 
 
 def parse_date(entry: dict[str, Any]) -> datetime | None:
-    """Extract a timezone-aware UTC datetime from a feedparser entry.
+    """Extract the exact timezone-aware UTC datetime of publication from a feed entry.
 
-    Tries ``published_parsed`` first, then falls back to
-    ``updated_parsed``.  Both are :class:`time.struct_time` objects
-    produced by :mod:`feedparser`.
-
-    Args:
-        entry: A single feedparser entry dict.
-
-    Returns:
-        A :class:`~datetime.datetime` in UTC, or ``None`` if neither
-        field is available.
+    Tries struct_time objects first, then parses raw RFC 2822 or ISO 8601 strings
+    from tags like pubDate, published, updated, or date.
     """
-    for field in ("published_parsed", "updated_parsed"):
+    # 1. Try struct_time fields first
+    for field in ("published_parsed", "updated_parsed", "created_parsed"):
         struct: time.struct_time | None = entry.get(field)
         if struct is not None:
             try:
-                # timegm interprets struct_time as UTC and returns a POSIX ts
                 ts = timegm(struct)
                 return datetime.fromtimestamp(ts, tz=timezone.utc)
             except (ValueError, OverflowError, OSError):
                 continue
+
+    # 2. Fallback to raw string fields (RFC 2822 / ISO 8601)
+    for str_field in ("published", "pubDate", "updated", "created", "date", "dc:date"):
+        val: str | None = entry.get(str_field)
+        if val and isinstance(val, str):
+            try:
+                dt = email.utils.parsedate_to_datetime(val)
+                if dt:
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    return dt.astimezone(timezone.utc)
+            except Exception:
+                try:
+                    dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    return dt.astimezone(timezone.utc)
+                except Exception:
+                    continue
     return None
 
 
