@@ -1,0 +1,111 @@
+name: CyberIntel Ingestion Pipeline
+
+# ---------------------------------------------------------------------------
+# Schedule: runs every 6 hours via cron.
+# Also supports manual trigger from the GitHub Actions UI.
+#
+# This pipeline:
+#   1. Pings Supabase to prevent free-tier auto-pause (7-day inactivity limit)
+#   2. Ingests CVEs from NVD API v2
+#   3. Ingests Known Exploited Vulnerabilities from CISA KEV
+#   4. Ingests news articles from 9 RSS feeds
+#   5. Ingests research articles from 3 RSS feeds
+#   6. Enriches all new items with Gemini (summary, business angle, interview nugget)
+#   7. Generates vector embeddings for semantic search
+# ---------------------------------------------------------------------------
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+  workflow_dispatch:          # Allow manual trigger
+
+# Prevent overlapping runs
+concurrency:
+  group: ingestion-pipeline
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    name: Ingest & Enrich
+    runs-on: ubuntu-latest
+    timeout-minutes: 30       # Hard cap to prevent runaway jobs
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+    steps:
+      # ------------------------------------------------------------------
+      # Setup
+      # ------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ------------------------------------------------------------------
+      # Keep-alive: prevent Supabase free-tier auto-pause
+      # ------------------------------------------------------------------
+      - name: Supabase keep-alive ping
+        run: |
+          python -c "
+          from shared.supabase_client import get_supabase_client
+          client = get_supabase_client(use_service_key=True)
+          result = client.table('ingestion_logs').select('id').limit(1).execute()
+          print('✓ Supabase connection OK')
+          "
+
+      # ------------------------------------------------------------------
+      # Stream 1: Vulnerabilities & Threats
+      # ------------------------------------------------------------------
+      - name: "Stream 1 — NVD Vulnerabilities"
+        run: python -m ingestion.nvd_ingest
+        continue-on-error: true   # Don't block other streams if NVD is down
+
+      - name: "Stream 1 — CISA KEV"
+        run: python -m ingestion.kev_ingest
+        continue-on-error: true
+
+      # ------------------------------------------------------------------
+      # Stream 2: News & Analysis (RSS)
+      # ------------------------------------------------------------------
+      - name: "Stream 2 — News RSS Feeds"
+        run: python -m ingestion.rss_ingest --stream news
+        continue-on-error: true
+
+      # ------------------------------------------------------------------
+      # Stream 3: Research (RSS)
+      # ------------------------------------------------------------------
+      - name: "Stream 3 — Research RSS Feeds"
+        run: python -m ingestion.rss_ingest --stream research
+        continue-on-error: true
+
+      # ------------------------------------------------------------------
+      # AI Processing (Gemini 2.0 Flash)
+      # ------------------------------------------------------------------
+      - name: "AI Enrichment — Generate summaries, business angles, interview nuggets"
+        run: python -m ingestion.enrichment
+
+      - name: "AI Embeddings — Generate vector embeddings for semantic search"
+        run: python -m ingestion.embeddings
+
+      # ------------------------------------------------------------------
+      # Summary
+      # ------------------------------------------------------------------
+      - name: Print run summary
+        if: always()
+        run: |
+          echo "============================================"
+          echo " CyberIntel Ingestion Complete"
+          echo " Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "============================================"
