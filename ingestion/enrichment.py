@@ -211,9 +211,11 @@ def enrich_table(
             update_enrichment(
                 table=table,
                 item_id=item_id,
-                summary_bullets=parsed.get("summary_bullets", []),
-                business_angle=parsed.get("business_angle", ""),
-                interview_nugget=parsed.get("interview_nugget", ""),
+                enrichment={
+                    "summary_bullets": parsed.get("summary_bullets", []),
+                    "business_angle": parsed.get("business_angle", ""),
+                    "interview_nugget": parsed.get("interview_nugget", ""),
+                },
             )
 
             enriched += 1

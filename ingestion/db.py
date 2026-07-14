@@ -10,7 +10,7 @@ error handling so that pipeline scripts never crash on a single
 DB failure.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from typing import Optional
 
@@ -153,7 +153,7 @@ def update_enrichment(table: str, item_id: str, enrichment: dict) -> bool:
             "business_angle": enrichment.get("business_angle"),
             "interview_nugget": enrichment.get("interview_nugget"),
             "enriched": True,
-            "updated_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         _client.table(table).update(payload).eq("id", item_id).execute()
         logger.info("Enriched %s item %s", table, item_id)
@@ -299,7 +299,7 @@ def complete_ingestion_log(
             "items_enriched": items_enriched,
             "items_embedded": items_embedded,
             "status": status,
-            "completed_at": datetime.utcnow().isoformat(),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
         }
         if errors is not None:
             payload["errors"] = errors

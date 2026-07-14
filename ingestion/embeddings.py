@@ -243,7 +243,7 @@ def main() -> None:
             items_enriched=0,
             items_embedded=embedded,
             errors={"count": errs} if errs else None,
-            status="completed" if errs == 0 else "completed",
+            status="completed" if errs == 0 else "partial",
         )
 
     logger.info(

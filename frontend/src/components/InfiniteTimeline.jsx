@@ -1,413 +1,305 @@
-import React, { useState, useEffect } from 'react';
-import { Filter, Search, RefreshCw, ShieldAlert, BookOpen, Layers, ArrowDown, Check } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search } from 'lucide-react';
 import ArticleCard from './ArticleCard';
 import VulnCard from './VulnCard';
 
-export default function InfiniteTimeline({ activeTab, setActiveTab }) {
+/**
+ * Unified feed component. Renders either articles or vulnerabilities
+ * based on the `mode` prop.
+ *
+ * - mode="articles" → News feed with stream filter (All / News / Research)
+ * - mode="vulns"    → Vulnerability list with severity filter
+ */
+export default function InfiniteTimeline({ mode }) {
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  
-  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Article-specific filter
   const [streamFilter, setStreamFilter] = useState('');
+
+  // Vulnerability-specific filters
   const [severityFilter, setSeverityFilter] = useState('');
   const [kevOnly, setKevOnly] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
 
-  // Fetch Data from API (or fallback to dummy data if local dev API isn't running)
-  const fetchItems = async (pageNum = 1, append = false) => {
+  const fetchItems = useCallback(async (pageNum = 1, append = false) => {
     setLoading(true);
     try {
-      let url = '';
-      if (isSearching && searchQuery.trim()) {
-        url = `/api/articles/search?q=${encodeURIComponent(searchQuery)}&limit=15`;
-      } else if (activeTab === 'articles') {
-        url = `/api/articles?page=${pageNum}&page_size=15`;
-        if (streamFilter) url += `&stream=${streamFilter}`;
+      let url;
+      if (mode === 'articles') {
+        if (searchQuery.trim()) {
+          url = `/api/articles/search?q=${encodeURIComponent(searchQuery.trim())}&limit=20`;
+        } else {
+          url = `/api/articles?page=${pageNum}&page_size=20`;
+          if (streamFilter) url += `&stream=${streamFilter}`;
+        }
       } else {
-        url = `/api/vulnerabilities?page=${pageNum}&page_size=15`;
+        url = `/api/vulnerabilities?page=${pageNum}&page_size=20`;
         if (severityFilter) url += `&severity=${severityFilter}`;
         if (kevOnly) url += `&kev_only=true`;
       }
 
       const res = await fetch(url);
-      if (!res.ok) throw new Error('API fetch failed');
-      const data = await res.json();
+      if (!res.ok) throw new Error(`API ${res.status}`);
 
-      let newItems = data.items || [];
-      if (!append && newItems.length === 0) {
-        newItems = generateDemoData(activeTab, pageNum);
+      const data = await res.json();
+      const newItems = data.items || [];
+      setItems((prev) => (append ? [...prev, ...newItems] : newItems));
+      setHasMore(data.has_more ?? newItems.length >= 20);
+    } catch {
+      // Offline fallback — show demo data on first load only
+      if (!append) {
+        setItems(mode === 'articles' ? getDemoArticles() : getDemoVulns());
       }
-      if (append) {
-        setItems(prev => [...prev, ...newItems]);
-      } else {
-        setItems(newItems);
-      }
-      setHasMore(data.has_more ?? (newItems.length >= 15));
-    } catch (err) {
-      console.warn('API fetch error, generating rich fallback data for UI preview:', err);
-      // Generate realistic demo fallback data if backend API is not currently running locally
-      const demoData = generateDemoData(activeTab, pageNum);
-      if (append) {
-        setItems(prev => [...prev, ...demoData]);
-      } else {
-        setItems(demoData);
-      }
-      setHasMore(pageNum < 3);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
-  };
+  }, [mode, streamFilter, severityFilter, kevOnly, searchQuery]);
 
+  // Reset and fetch when mode or filters change
   useEffect(() => {
     setPage(1);
     fetchItems(1, false);
-  }, [activeTab, streamFilter, severityFilter, kevOnly]);
+  }, [fetchItems]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) {
-      setIsSearching(false);
-      fetchItems(1, false);
-      return;
-    }
-    setIsSearching(true);
     setPage(1);
     fetchItems(1, false);
   };
 
   const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchItems(nextPage, true);
-    }
+    const next = page + 1;
+    setPage(next);
+    fetchItems(next, true);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Top Controls & Navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', background: 'var(--bg-card)', padding: '1rem 1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-search)', padding: '0.3rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
-          <button
-            type="button"
-            className={`btn-outline ${activeTab === 'articles' ? 'active-tab' : ''}`}
-            onClick={() => { setActiveTab('articles'); setIsSearching(false); setSearchQuery(''); }}
-            style={{
-              background: activeTab === 'articles' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'articles' ? 'var(--text-on-primary)' : 'var(--text-muted)',
-              border: 'none',
-              padding: '0.5rem 1.25rem',
-              fontWeight: '600'
-            }}
-          >
-            <BookOpen size={16} />
-            <span>News & Research</span>
-          </button>
-          <button
-            type="button"
-            className={`btn-outline ${activeTab === 'vulns' ? 'active-tab' : ''}`}
-            onClick={() => { setActiveTab('vulns'); setIsSearching(false); setSearchQuery(''); }}
-            style={{
-              background: activeTab === 'vulns' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'vulns' ? 'var(--text-on-primary)' : 'var(--text-muted)',
-              border: 'none',
-              padding: '0.5rem 1.25rem',
-              fontWeight: '600'
-            }}
-          >
-            <ShieldAlert size={16} />
-            <span>Vulnerabilities & KEV</span>
-          </button>
+    <div>
+      {/* Search bar */}
+      <form onSubmit={handleSearch} className="search-wrapper">
+        <Search size={16} className="search-icon" />
+        <input
+          type="text"
+          className="search-field"
+          placeholder={mode === 'articles' ? 'Search articles…' : 'Search vulnerabilities…'}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </form>
+
+      {/* Filter tabs */}
+      <div className="feed-filters">
+        {mode === 'articles' ? (
+          <>
+            <button
+              className={`filter-tab ${!streamFilter ? 'active' : ''}`}
+              onClick={() => setStreamFilter('')}
+            >
+              All
+            </button>
+            <button
+              className={`filter-tab ${streamFilter === 'news' ? 'active' : ''}`}
+              onClick={() => setStreamFilter('news')}
+            >
+              News
+            </button>
+            <button
+              className={`filter-tab ${streamFilter === 'research' ? 'active' : ''}`}
+              onClick={() => setStreamFilter('research')}
+            >
+              Research
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              className={`filter-tab ${!severityFilter && !kevOnly ? 'active' : ''}`}
+              onClick={() => { setSeverityFilter(''); setKevOnly(false); }}
+            >
+              All
+            </button>
+            <button
+              className={`filter-tab ${severityFilter === 'CRITICAL' ? 'active' : ''}`}
+              onClick={() => { setSeverityFilter('CRITICAL'); setKevOnly(false); }}
+            >
+              Critical
+            </button>
+            <button
+              className={`filter-tab ${severityFilter === 'HIGH' ? 'active' : ''}`}
+              onClick={() => { setSeverityFilter('HIGH'); setKevOnly(false); }}
+            >
+              High
+            </button>
+            <button
+              className={`filter-tab ${kevOnly ? 'active' : ''}`}
+              onClick={() => { setKevOnly(!kevOnly); setSeverityFilter(''); }}
+            >
+              CISA KEV
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Feed list */}
+      <div className="feed-list">
+        {items.map((item, idx) =>
+          mode === 'articles'
+            ? <ArticleCard key={item.id || idx} article={item} />
+            : <VulnCard key={item.id || idx} vuln={item} />
+        )}
+      </div>
+
+      {/* States: loading, empty, load more */}
+      {loading && items.length === 0 && (
+        <div className="loading-text">Loading…</div>
+      )}
+
+      {!loading && items.length === 0 && (
+        <div className="empty-state">
+          <h3>No items found</h3>
+          <p>
+            {mode === 'articles'
+              ? 'No articles match your filters. Try a different search or filter.'
+              : 'No vulnerabilities match your filters.'}
+          </p>
         </div>
+      )}
 
-        {/* Semantic Search Bar */}
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', flex: '1', maxWidth: '400px' }}>
-          <div className="search-bar" style={{ width: '100%' }}>
-            <Search size={16} color="var(--text-muted)" />
-            <input
-              type="text"
-              className="search-input"
-              placeholder={activeTab === 'articles' ? "Semantic search news (e.g. 'Ransomware attacks')..." : "Search CVEs or products..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => { setSearchQuery(''); setIsSearching(false); fetchItems(1, false); }}
-                style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+      {!loading && hasMore && items.length > 0 && (
+        <button className="load-more-btn" onClick={handleLoadMore}>
+          Load more
+        </button>
+      )}
 
-      {/* Sub-Filters Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', padding: '0 0.5rem' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>
-          <Filter size={14} /> Filters:
-        </span>
-
-        {activeTab === 'articles' ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setStreamFilter(streamFilter === '' ? 'news' : streamFilter === 'news' ? 'research' : '')}
-              className="badge"
-              style={{
-                background: streamFilter ? 'var(--primary-glow)' : 'var(--bg-search)',
-                color: streamFilter ? 'var(--primary)' : 'var(--text-muted)',
-                border: `1px solid ${streamFilter ? 'var(--primary)' : 'var(--border-color)'}`,
-                cursor: 'pointer',
-                padding: '0.4rem 0.85rem'
-              }}
-            >
-              Stream: {streamFilter ? streamFilter.toUpperCase() : 'ALL (News & Research)'}
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                const sevs = ['', 'CRITICAL', 'HIGH', 'MEDIUM'];
-                const nextIdx = (sevs.indexOf(severityFilter) + 1) % sevs.length;
-                setSeverityFilter(sevs[nextIdx]);
-              }}
-              className="badge"
-              style={{
-                background: severityFilter ? `var(--severity-${severityFilter.toLowerCase()}-bg)` : 'var(--bg-search)',
-                color: severityFilter ? `var(--severity-${severityFilter.toLowerCase()})` : 'var(--text-muted)',
-                border: `1px solid ${severityFilter ? `var(--severity-${severityFilter.toLowerCase()})` : 'var(--border-color)'}`,
-                cursor: 'pointer',
-                padding: '0.4rem 0.85rem'
-              }}
-            >
-              Severity: {severityFilter || 'ALL SEVERITIES'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setKevOnly(!kevOnly)}
-              className="badge"
-              style={{
-                background: kevOnly ? 'var(--severity-critical-bg)' : 'var(--bg-search)',
-                color: kevOnly ? 'var(--severity-critical)' : 'var(--text-muted)',
-                border: `1px solid ${kevOnly ? 'var(--severity-critical)' : 'var(--border-color)'}`,
-                cursor: 'pointer',
-                padding: '0.4rem 0.85rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
-            >
-              {kevOnly && <Check size={13} />}
-              <span>CISA KEV EXPLOITED ONLY</span>
-            </button>
-          </>
-        )}
-
-        {(streamFilter || severityFilter || kevOnly || isSearching) && (
-          <button
-            type="button"
-            onClick={() => { setStreamFilter(''); setSeverityFilter(''); setKevOnly(false); setIsSearching(false); setSearchQuery(''); }}
-            style={{ fontSize: '0.8rem', color: 'var(--primary)', textDecoration: 'underline', marginLeft: 'auto' }}
-          >
-            Reset All Filters
-          </button>
-        )}
-      </div>
-
-      {/* Feed List */}
-      <div className="feed-grid">
-        {items.length > 0 ? (
-          items.map((item, idx) => {
-            if (activeTab === 'articles' || item.item_type === 'article') {
-              return <ArticleCard key={item.id || idx} article={item} />;
-            }
-            return <VulnCard key={item.id || idx} vuln={item} />;
-          })
-        ) : (
-          !loading && (
-            <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
-              <Layers size={40} style={{ opacity: 0.3, marginBottom: '1rem', color: 'var(--primary)' }} />
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No matching intelligence found</h3>
-              <p>Try adjusting your search query or filter tags.</p>
-            </div>
-          )
-        )}
-      </div>
-
-      {/* Loading Indicator & Load More */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5rem 0' }}>
-        {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: '600' }}>
-            <RefreshCw size={18} className="pulse-glow" style={{ animation: 'spin 1s linear infinite' }} />
-            <span>Fetching real-time intelligence feeds...</span>
-          </div>
-        ) : hasMore ? (
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={handleLoadMore}
-            style={{ padding: '0.75rem 2rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <span>Load More Timeline Records</span>
-            <ArrowDown size={16} />
-          </button>
-        ) : (
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-            — End of current intelligence stream —
-          </div>
-        )}
-      </div>
+      {loading && items.length > 0 && (
+        <div className="loading-text">Loading more…</div>
+      )}
     </div>
   );
 }
 
-// Helper: Generate realistic demo data for immediate UI preview
-function generateDemoData(tab, pageNum) {
-  if (tab === 'articles') {
-    const base = [
-      {
-        id: `demo-art-${pageNum}-1`,
-        title: "Google Mandiant Unveils 'AI Cyber Defense Agent' for Real-Time SOC Automated Remediation",
-        url: "https://cloud.google.com/blog/topics/threat-intelligence",
-        source: "mandiant_threat_intel",
-        stream: "news",
-        author: "Kevin Mandia",
-        published_at: new Date(Date.now() - 3600000 * pageNum).toISOString(),
-        tags: ["AI Security", "SOC Automation", "Mandiant", "Threat Defense", "Gemini 2.0"],
-        enriched: true,
-        summary_bullets: [
-          "Mandiant researchers demonstrate a new multi-agent cybersecurity framework capable of triaging SOC alerts with 99.4% accuracy.",
-          "The system leverages Gemini 2.0 Flash reasoning to correlate cross-cloud IAM telemetry, firewall logs, and endpoint memory dumps in real time.",
-          "Early enterprise deployments report a 85% reduction in Mean Time To Remediate (MTTR) for ransomware pre-cursor activity."
-        ],
-        business_angle: "Automating Tier-1 and Tier-2 SOC triage alleviates severe cybersecurity talent shortages while responding to machine-speed attacks before data exfiltration occurs.",
-        interview_nugget: "Modern SOC automation requires moving beyond static SOAR playbooks to agentic workflows that dynamically formulate hypotheses and verify containment."
-      },
-      {
-        id: `demo-art-${pageNum}-2`,
-        title: "NIST Releases Post-Quantum Cryptography Implementation Guidance for Enterprise Infrastructure",
-        url: "https://www.bleepingcomputer.com",
-        source: "bleeping_computer",
-        stream: "news",
-        author: "Lawrence Abrams",
-        published_at: new Date(Date.now() - 7200000 * pageNum).toISOString(),
-        tags: ["Post-Quantum", "Cryptography", "NIST", "FIPS 203", "ML-KEM"],
-        enriched: true,
-        summary_bullets: [
-          "NIST has officially mandated migration timelines for FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), and FIPS 205 (SLH-DSA) quantum-resistant standards.",
-          "The directive warns against 'Store Now, Decrypt Later' (SNDL) espionage tactics currently targeting financial, healthcare, and defense communications.",
-          "Organizations are instructed to conduct cryptographic asset inventories and transition TLS handshakes to hybrid Kyber algorithms by Q4 2026."
-        ],
-        business_angle: "Quantum computing threats are an immediate risk to long-life sensitive data. Cryptographic agility must be budgeted into all upcoming infrastructure refreshes.",
-        interview_nugget: "Hybrid cryptographic protocols—combining standard ECDH with lattice-based ML-KEM—provide defense-in-depth during the multi-year quantum transition."
-      },
-      {
-        id: `demo-art-${pageNum}-3`,
-        title: "DeepSeek-R1 AI Architecture Analyzed for Novel Automated Exploit Generation & Defensive Patching",
-        url: "https://darkreading.com",
-        source: "darkreading",
-        stream: "research",
-        author: "Kelly Jackson Higgins",
-        published_at: new Date(Date.now() - 10800000 * pageNum).toISOString(),
-        tags: ["LLM", "DeepSeek", "Vulnerability Research", "Automated Exploitation", "AI Defense"],
-        enriched: true,
-        summary_bullets: [
-          "Security researchers demonstrate that open-weight reasoning models like DeepSeek-R1 can autonomously discover complex race conditions in Linux kernel drivers.",
-          "The model achieved a 42% success rate in generating working proof-of-concept exploits when fed raw decompiled binaries.",
-          "Defensive teams are adapting the same reasoning traces to automate root-cause analysis and generate verified patches prior to deployment."
-        ],
-        business_angle: "AI reasoning models are drastically compressing the timeline between vulnerability disclosure and automated exploitation from weeks to hours.",
-        interview_nugget: "The asymmetry of AI in cybersecurity: offensive AI only needs to find one flaw in a complex state machine, whereas defensive AI must formally prove memory safety across all paths."
-      },
-      {
-        id: `demo-art-${pageNum}-4`,
-        title: "Zero-Trust Identity Architecture Stops Massive OAuth Application Phishing Campaign",
-        url: "https://www.wired.com",
-        source: "wired_security",
-        stream: "news",
-        author: "Andy Greenberg",
-        published_at: new Date(Date.now() - 14400000 * pageNum).toISOString(),
-        tags: ["Zero-Trust", "OAuth", "Identity Security", "Phishing Resistant MFA", "Cloud"],
-        enriched: true,
-        summary_bullets: [
-          "A global campaign targeting Fortune 500 cloud tenants attempted to bypass legacy MFA via illicit OAuth application consent grants.",
-          "Organizations enforcing FIDO2/WebAuthn hardware tokens and continuous identity posture evaluation successfully thwarted all compromise attempts.",
-          "Threat actors are increasingly shifting away from credential stuffing toward token hijacking and session cookie exfiltration."
-        ],
-        business_angle: "Traditional passwords and SMS/app-based OTPs are obsolete against modern adversary-in-the-middle (AiTM) phishing kits. Phishing-resistant FIDO2 MFA is essential.",
-        interview_nugget: "Identity is the primary security perimeter in cloud architectures; monitoring OAuth token scopes and conditional access policies stops lateral movement."
-      },
-      {
-        id: `demo-art-${pageNum}-5`,
-        title: "Operation Cronos: LockBit Ransomware Affiliate Toolkit Leaked Following Law Enforcement Takedown",
-        url: "https://krebsonsecurity.com",
-        source: "krebs_on_security",
-        stream: "news",
-        author: "Brian Krebs",
-        published_at: new Date(Date.now() - 21600000 * pageNum).toISOString(),
-        tags: ["Ransomware", "LockBit", "Operation Cronos", "Threat Intel", "BYOVD"],
-        enriched: true,
-        summary_bullets: [
-          "An updated version of the LockBit 3.0 builder and affiliate negotiation scripts has surfaced on cybercrime forums following Operation Cronos.",
-          "The toolkit reveals automated scripts for disabling EDR agents and clearing Windows Event Logs using BYOVD (Bring Your Own Vulnerable Driver) techniques.",
-          "Law enforcement agencies have decrypted over 3,000 victim servers using keys seized from backend infrastructure."
-        ],
-        business_angle: "Even after major law enforcement takedowns, leaked builder kits allow splinter groups and low-skilled actors to launch ransomware campaigns with enterprise-grade tooling.",
-        interview_nugget: "BYOVD attacks demonstrate why kernel-level driver blocklists must be continuously updated; signing certificates of vulnerable legitimate drivers must be revoked at the OS level."
-      }
-    ];
-    return base;
-  } else {
-    return [
-      {
-        id: `demo-vuln-${pageNum}-1`,
-        cve_id: "CVE-2024-3400",
-        source: "kev",
-        severity: "CRITICAL",
-        cvss_v3_score: 10.0,
-        cvss_v3_vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-        description: "A command injection as a result of arbitrary file creation feature in the GlobalProtect feature of Palo Alto Networks PAN-OS software for specific PAN-OS versions and distinct feature configurations may enable an unauthenticated attacker to execute arbitrary code with root privileges on the firewall.",
-        kev_due_date: "2024-04-19",
-        kev_known_ransomware: true,
-        published_at: new Date(Date.now() - 86400000 * pageNum).toISOString(),
-        enriched: true,
-        summary_bullets: [
-          "Unauthenticated remote command execution (RCE) with root privileges on PAN-OS GlobalProtect gateways.",
-          "Active exploitation observed globally by state-sponsored cyber espionage actors (Operation MidnightEclipse) and ransomware syndicates.",
-          "Requires telemetry feature to be enabled under specific configurations, but patching to hotfix release is mandatory."
-        ],
-        business_angle: "CVSS 10.0 perimeter vulnerability actively exploited by ransomware syndicates. Immediate emergency patching required; failure to patch creates severe risk of total domain compromise.",
-        interview_nugget: "CVE-2024-3400 illustrates the danger of string concatenation in telemetry parsing pipelines; edge devices running as root must employ strict sandboxing and privilege separation."
-      },
-      {
-        id: `demo-vuln-${pageNum}-2`,
-        cve_id: "CVE-2024-23897",
-        source: "nvd",
-        severity: "CRITICAL",
-        cvss_v3_score: 9.8,
-        cvss_v3_vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-        description: "Jenkins 2.441 and earlier, LTS 2.426.2 and earlier does not disable a feature of its CLI command parser that replaces an '@' character followed by a file path in an argument with the file's contents, allowing unauthenticated attackers to read arbitrary files on the Jenkins controller file system.",
-        kev_due_date: null,
-        kev_known_ransomware: false,
-        published_at: new Date(Date.now() - 172800000 * pageNum).toISOString(),
-        enriched: true,
-        summary_bullets: [
-          "Arbitrary file read vulnerability via Jenkins CLI args usage of '@' character expansion.",
-          "Unauthenticated attackers can read cryptographic keys, SSH credentials, and environment variables stored on the Jenkins master.",
-          "Can be escalated to Remote Code Execution (RCE) if Resource Root URL or specific plugins are enabled."
-        ],
-        business_angle: "CI/CD servers hold the keys to the entire software supply chain. Exposing Jenkins credentials allows attackers to inject malicious code into production builds silently.",
-        interview_nugget: "When auditing CI/CD pipelines, arbitrary file reads on the orchestrator are equivalent to RCE because build masters store SSH keys and cloud API secrets in plaintext working directories."
-      }
-    ];
-  }
+
+// ── Demo data for offline preview ────────────────────────────────
+
+function getDemoArticles() {
+  return [
+    {
+      id: 'demo-1',
+      title: 'Google Mandiant Unveils AI Cyber Defense Agent for Real-Time SOC Remediation',
+      url: 'https://cloud.google.com/blog/topics/threat-intelligence',
+      source: 'mandiant_threat_intel',
+      stream: 'news',
+      author: 'Kevin Mandia',
+      published_at: new Date(Date.now() - 3600000).toISOString(),
+      raw_content: 'Mandiant researchers demonstrate a new multi-agent cybersecurity framework capable of triaging SOC alerts with 99.4% accuracy. The system leverages Gemini 2.0 Flash reasoning to correlate cross-cloud IAM telemetry, firewall logs, and endpoint memory dumps in real time.',
+      tags: ['AI Security', 'SOC Automation', 'Gemini 2.0'],
+      enriched: true,
+      summary_bullets: [
+        'Multi-agent framework triages SOC alerts with 99.4% accuracy using Gemini 2.0 Flash.',
+        'Correlates cross-cloud IAM telemetry, firewall logs, and endpoint memory dumps in real time.',
+        'Early deployments report 85% reduction in Mean Time To Remediate for ransomware activity.',
+      ],
+      business_angle: 'Automating Tier-1 and Tier-2 SOC triage alleviates cybersecurity talent shortages while responding to machine-speed attacks.',
+      interview_nugget: 'Modern SOC automation requires moving beyond static SOAR playbooks to agentic workflows that dynamically formulate hypotheses.',
+    },
+    {
+      id: 'demo-2',
+      title: 'NIST Releases Post-Quantum Cryptography Implementation Guidance',
+      url: 'https://www.bleepingcomputer.com',
+      source: 'bleeping_computer',
+      stream: 'news',
+      author: 'Lawrence Abrams',
+      published_at: new Date(Date.now() - 7200000).toISOString(),
+      raw_content: 'NIST has officially mandated migration timelines for FIPS 203, 204, and 205 quantum-resistant standards, warning against Store Now Decrypt Later espionage tactics targeting financial and defense sectors.',
+      tags: ['Post-Quantum', 'Cryptography', 'NIST'],
+      enriched: true,
+      summary_bullets: [
+        'NIST mandates migration timelines for ML-KEM, ML-DSA, and SLH-DSA quantum-resistant standards.',
+        'Warns against Store Now, Decrypt Later espionage targeting financial and defense sectors.',
+        'Organizations must transition TLS handshakes to hybrid Kyber algorithms by Q4 2026.',
+      ],
+      business_angle: 'Quantum computing threats are an immediate risk to long-life sensitive data.',
+      interview_nugget: 'Hybrid cryptographic protocols combining ECDH with lattice-based ML-KEM provide defense-in-depth during the quantum transition.',
+    },
+    {
+      id: 'demo-3',
+      title: 'Zero-Trust Architecture Stops Massive OAuth Phishing Campaign',
+      url: 'https://www.wired.com',
+      source: 'wired_security',
+      stream: 'news',
+      published_at: new Date(Date.now() - 14400000).toISOString(),
+      raw_content: 'A global campaign targeting Fortune 500 cloud tenants attempted to bypass legacy MFA via illicit OAuth consent grants. Organizations enforcing FIDO2 hardware tokens blocked all compromise attempts.',
+      tags: ['Zero-Trust', 'OAuth', 'Identity Security'],
+      enriched: true,
+      summary_bullets: [
+        'Fortune 500 cloud tenants targeted via illicit OAuth application consent grants.',
+        'FIDO2/WebAuthn hardware tokens blocked all compromise attempts.',
+        'Threat actors shifting from credential stuffing to token hijacking and session exfiltration.',
+      ],
+      business_angle: 'Traditional MFA is obsolete against adversary-in-the-middle phishing kits. FIDO2 is essential.',
+      interview_nugget: 'Identity is the primary security perimeter in cloud architectures; monitoring OAuth token scopes stops lateral movement.',
+    },
+    {
+      id: 'demo-4',
+      title: 'DeepSeek-R1 AI Architecture Analyzed for Automated Exploit Generation',
+      url: 'https://darkreading.com',
+      source: 'dark_reading',
+      stream: 'research',
+      author: 'Kelly Jackson Higgins',
+      published_at: new Date(Date.now() - 28800000).toISOString(),
+      raw_content: 'Security researchers demonstrate that open-weight reasoning models like DeepSeek-R1 can autonomously discover complex race conditions in Linux kernel drivers with a 42% success rate in generating working PoC exploits.',
+      tags: ['LLM', 'Vulnerability Research', 'AI Defense'],
+      enriched: true,
+      summary_bullets: [
+        'Open-weight reasoning models can discover complex race conditions in Linux kernel drivers.',
+        'The model achieved 42% success rate generating working proof-of-concept exploits from decompiled binaries.',
+        'Defensive teams adapting reasoning traces for root-cause analysis and verified patch generation.',
+      ],
+      business_angle: 'AI reasoning models compress the timeline between vulnerability disclosure and exploitation from weeks to hours.',
+      interview_nugget: 'Offensive AI only needs to find one flaw; defensive AI must formally prove safety across all paths.',
+    },
+  ];
+}
+
+function getDemoVulns() {
+  return [
+    {
+      id: 'demo-v1',
+      cve_id: 'CVE-2024-3400',
+      source: 'kev',
+      severity: 'CRITICAL',
+      description: 'A command injection vulnerability in PAN-OS GlobalProtect allows unauthenticated remote code execution with root privileges on affected firewalls.',
+      kev_due_date: '2024-04-19',
+      kev_known_ransomware: true,
+      published_at: new Date(Date.now() - 86400000).toISOString(),
+      enriched: true,
+      summary_bullets: [
+        'Unauthenticated RCE with root privileges on PAN-OS GlobalProtect gateways.',
+        'Active exploitation by state-sponsored actors and ransomware syndicates.',
+        'Telemetry feature must be enabled; patching is mandatory.',
+      ],
+      business_angle: 'CVSS 10.0 perimeter vulnerability actively exploited. Emergency patching required.',
+      interview_nugget: 'Edge devices running as root must employ strict sandboxing and privilege separation.',
+    },
+    {
+      id: 'demo-v2',
+      cve_id: 'CVE-2024-23897',
+      source: 'nvd',
+      severity: 'CRITICAL',
+      description: 'Jenkins CLI argument expansion vulnerability allows unauthenticated attackers to read arbitrary files on the controller file system, including SSH keys and API secrets.',
+      published_at: new Date(Date.now() - 172800000).toISOString(),
+      enriched: true,
+      summary_bullets: [
+        'Arbitrary file read via Jenkins CLI @ character expansion.',
+        'Attackers can access cryptographic keys, SSH credentials, and environment variables.',
+        'Escalatable to RCE if Resource Root URL or specific plugins are enabled.',
+      ],
+      business_angle: 'CI/CD servers hold keys to the entire software supply chain.',
+      interview_nugget: 'Arbitrary file reads on CI/CD orchestrators are equivalent to RCE because build masters store secrets in plaintext.',
+    },
+  ];
 }

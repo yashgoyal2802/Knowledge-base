@@ -161,13 +161,15 @@ def _parse_entry(
         logger.debug("Skipping entry without title/url in source '%s'", source_key)
         return None
 
+    pub_dt = parse_date(entry)
+
     return {
         "source": source_key,
         "stream": stream,
         "title": title.strip(),
         "url": url.strip(),
         "author": entry.get("author") or None,
-        "published_at": parse_date(entry),
+        "published_at": pub_dt.isoformat() if pub_dt else None,
         "raw_content": _extract_raw_content(entry),
         "tags": _extract_tags(entry),
     }
